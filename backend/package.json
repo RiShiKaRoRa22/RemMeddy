@@ -1,0 +1,26 @@
+{
+  "name": "med-reminder-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "worker": "node worker.js"
+  },
+  "dependencies": {
+    "agenda": "^5.0.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.0.0",
+    "twilio": "^4.8.0",
+    "moment": "^2.29.4",
+    "moment-timezone": "^0.5.43",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

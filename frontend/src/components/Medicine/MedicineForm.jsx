@@ -5,7 +5,8 @@ export default function MedicineForm({ onSubmit, onCancel }) {
     name: '',
     dose: '',
     notes: '',
-    schedule: { times: ['09:00'] }
+    schedule: { times: ['09:00'] },
+    notificationType: 'sms' // Default to SMS
   });
 
   const handleSubmit = (e) => {
@@ -130,6 +131,56 @@ export default function MedicineForm({ onSubmit, onCancel }) {
             Cancel
           </button>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Notification Type
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setForm({...form, notificationType: 'sms'})}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                form.notificationType === 'sms' 
+                  ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                  : 'border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <div className="text-lg mb-1">📱</div>
+              <div className="text-sm font-medium">SMS</div>
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => setForm({...form, notificationType: 'whatsapp'})}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                form.notificationType === 'whatsapp' 
+                  ? 'border-green-500 bg-green-50 text-green-700' 
+                  : 'border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <div className="text-lg mb-1">💚</div>
+              <div className="text-sm font-medium">WhatsApp</div>
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => setForm({...form, notificationType: 'call'})}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                form.notificationType === 'call' 
+                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                  : 'border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <div className="text-lg mb-1">📞</div>
+              <div className="text-sm font-medium">Phone Call</div>
+            </button>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            How would you like to receive reminders?
+          </p>
+        </div>
+
       </form>
     </div>
   );

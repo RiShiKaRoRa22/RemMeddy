@@ -1,6 +1,13 @@
 import React from 'react';
 
 export default function MedicineCard({ medicine, onRemove }) {
+  const getNotificationIcon = (type) => {
+    switch(type) {
+      case 'whatsapp': return '💚';
+      case 'call': return '📞';
+      default: return '📱';
+    }
+  };
   return (
     <div className="card p-6 border-l-4 border-blue-500">
       <div className="flex justify-between items-start">
@@ -8,6 +15,9 @@ export default function MedicineCard({ medicine, onRemove }) {
           <h3 className="text-lg font-semibold text-gray-900">
             {medicine.name}
           </h3>
+          <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+              {getNotificationIcon(medicine.notificationType)} {medicine.notificationType?.toUpperCase()}
+          </span>
           {medicine.dose && (
             <p className="text-gray-600 mt-1">Dose: {medicine.dose}</p>
           )}
@@ -21,6 +31,7 @@ export default function MedicineCard({ medicine, onRemove }) {
         >
           🗑️
         </button>
+
       </div>
       
       <div className="mt-4">

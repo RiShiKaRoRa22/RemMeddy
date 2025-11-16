@@ -4,6 +4,10 @@ const morgan = require('morgan');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const { initAgenda } = require('./services/scheduler');
+const twilioRoutes = require('./routes/twilioRoutes');
+
+// ... other middleware ...
+
 
 const app = express();
 app.use(cors());
@@ -22,6 +26,7 @@ connectDB(process.env.MONGO_URI).then(async () => {
 app.use('/auth', require('./routes/authRoutes'));
 app.use('/medicines', require('./routes/medicineRoutes'));
 app.use('/logs', require('./routes/logRoutes'));
+app.use('/api/twilio', twilioRoutes);
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 

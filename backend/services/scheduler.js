@@ -3,7 +3,7 @@ const Reminder = require('../models/reminder');
 const Medicine = require('../models/medicine');
 const User = require('../models/user');
 const ReminderLog = require('../models/reminderLog');
-const { sendSms } = require('./twilio');
+//const { sendSms } = require('./twilio');
 
 
 let agenda = null;
@@ -21,7 +21,7 @@ async function initAgenda(mongoConnString) {
   });*/
 
   // Instead of regex pattern, define a concrete job name pattern
-agenda.define('reminder-job', {concurrency: 1,lockLifetime:1000}, async (job) => {
+/*agenda.define('reminder-job', {concurrency: 1,lockLifetime:1000}, async (job) => {
   console.log(`🎯 REMINDER JOB EXECUTED: ${job.attrs.name} at ${new Date()}`);
   
   try {
@@ -67,8 +67,74 @@ agenda.define('reminder-job', {concurrency: 1,lockLifetime:1000}, async (job) =>
   } catch (err) {
     console.error('💥 Agenda job error:', err);
   }
-});
+}); */
 
+
+const { sendSms, sendWhatsApp, makePhoneCall } = require('./twilio');
+
+// Use concrete job name instead of regex pattern
+agenda.define('reminder-job', { concurrency: 1, lockLifetime: 10000 }, async (job) => {
+  console.log(`🎯 REMINDER JOB EXECUTED: ${job.attrs.name} at ${new Date()}`);
+  
+  try {
+    const { reminderId } = job.attrs.data;
+    console.log('Processing reminder ID:', reminderId);
+    
+    const reminder = await Reminder.findById(reminderId).populate('medicine');
+    if (!reminder || !reminder.active) {
+      console.log('Reminder not found or inactive');
+      return;
+    }
+
+    const medicine = reminder.medicine;
+    if (!medicine || !medicine.active) {
+      console.log('Medicine not found or inactive');
+      return;
+    }
+
+    const user = await User.findById(medicine.user);
+    if (!user) {
+      console.log('User not found');
+      return;
+    }
+
+    const text = `Reminder: Time to take ${medicine.name} ${medicine.dose ? `(${medicine.dose})` : ''}. ${medicine.notes || ''}`;
+    const phoneWithCountryCode = `+91${user.phone}`;
+    console.log(`Sending ${reminder.notificationType} to ${phoneWithCountryCode}: ${text}`);
+
+    try {
+      let result;
+      
+      switch(reminder.notificationType) {
+        case 'whatsapp':
+          result = await sendWhatsApp(phoneWithCountryCode, text);
+          break;
+        case 'call':
+          result = await makePhoneCall(phoneWithCountryCode, medicine.name, medicine.dose, medicine.notes);
+          break;
+        case 'sms':
+        default:
+          result = await sendSms(phoneWithCountryCode, text);
+          break;
+      }
+
+      await ReminderLog.create({
+        reminder: reminder._id,
+        medicine: medicine._id,
+        user: user._id,
+        sentAt: new Date(),
+        deliverySid: result.sid,
+        notificationType: reminder.notificationType
+      });
+      
+      console.log(`✅ ${reminder.notificationType.toUpperCase()} sent to ${user.phone} for ${medicine.name}`);
+    } catch (err) {
+      console.error(`❌ Twilio ${reminder.notificationType} error:`, err.message);
+    }
+  } catch (err) {
+    console.error('💥 Agenda job error:', err);
+  }
+});
   await agenda.start();
   console.log('Agenda started');
 
@@ -88,25 +154,23 @@ async function scheduleReminder(reminder) {
   const jobName = `reminder-${reminder._id}`;
   await agenda.cancel({ name: jobName });
 
-  const [hours, minutes] = reminder.time.split(':');
-  
-  // Use explicit cron syntax
-  const cronExpr = `${minutes} ${hours} * * *`;
+  const cronExpr = timeToCron(reminder.time);
   console.log(`Creating DAILY JOB: ${jobName} at ${reminder.time}, cron: ${cronExpr}`);
 
-  // Create job with explicit repeatEvery
-  const job = agenda.create('reminder-job', { reminderId: reminder._id });
-  job.repeatEvery(cronExpr, {
-    timezone: 'Asia/Kolkata',
-    skipImmediate: true
-  });
-  
-  await job.save();
+  // Use agenda.every() instead of agenda.create() for simplicity
+  await agenda.every(cronExpr, 'reminder-job', { reminderId: reminder._id });
 
   reminder.jobName = jobName;
   await reminder.save();
   
-  console.log(`Job scheduled successfully: ${jobName}`);
+  console.log(`✅ Job scheduled successfully: ${jobName}`);
+  
+  // Verify job was created
+  const jobs = await agenda.jobs({ name: jobName });
+  console.log(`✅ Confirmed ${jobs.length} jobs scheduled`);
+  if (jobs[0]) {
+    console.log(`➡️ Next run: ${jobs[0].attrs.nextRunAt}`);
+  }
 }
 
 async function cancelReminder(reminder) {

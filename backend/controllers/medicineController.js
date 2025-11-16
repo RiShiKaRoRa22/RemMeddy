@@ -6,15 +6,22 @@ const { scheduleReminder, cancelReminder } = require('../services/scheduler');
 exports.addMedicine = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { name, dose, notes, schedule } = req.body;
-    // expect schedule.times = ["HH:MM","HH:MM"]
+    const { name, dose, notes, schedule, notificationType = 'sms' } = req.body;
+    
     const med = await Medicine.create({ user: userId, name, dose, notes, schedule });
     const reminders = [];
+    
     for (const time of (schedule.times || [])) {
-      const rem = await Reminder.create({ medicine: med._id, time });
+      const rem = await Reminder.create({ 
+        medicine: med._id, 
+        time,
+        notificationType,
+        phone: req.user.phone // Store user's phone from authenticated user
+      });
       reminders.push(rem);
       await scheduleReminder(rem);
     }
+    
     res.status(201).json({ medicine: med, reminders });
   } catch (err) {
     next(err);

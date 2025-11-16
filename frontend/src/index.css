@@ -1,4 +1,19 @@
-body { font-family: Arial, sans-serif; padding: 16px; }
-input { padding:8px; margin:6px 0; width:300px; display:block; }
-button { padding:8px 12px; margin:6px 0; }
-a { color: blue; }
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.5;
+  background-color: #f8fafc;
+}
+
+/* Custom utility classes for components */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
